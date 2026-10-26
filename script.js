@@ -1,9 +1,12 @@
+
 // =========================
 // SMOOTH SCROLLING
 // =========================
 
 document.querySelectorAll('a[href^="#"]').forEach(link => {
+
     link.addEventListener("click", function (e) {
+
         const targetId = this.getAttribute("href");
 
         if (targetId === "#") return;
@@ -11,14 +14,22 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
         const targetSection = document.querySelector(targetId);
 
         if (targetSection) {
+
             e.preventDefault();
 
+            const reducedMotion = window.matchMedia(
+                "(prefers-reduced-motion: reduce)"
+            ).matches;
+
             targetSection.scrollIntoView({
-                behavior: "smooth",
+                behavior: reducedMotion ? "auto" : "smooth",
                 block: "start"
             });
+
         }
+
     });
+
 });
 
 
@@ -28,13 +39,22 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
 
 const header = document.querySelector("header");
 
-window.addEventListener("scroll", () => {
-    if (window.scrollY > 50) {
-        header.classList.add("scrolled");
-    } else {
-        header.classList.remove("scrolled");
-    }
+function updateHeader() {
+
+    if (!header) return;
+
+    header.classList.toggle(
+        "scrolled",
+        window.scrollY > 50
+    );
+
+}
+
+window.addEventListener("scroll", updateHeader, {
+    passive: true
 });
+
+updateHeader();
 
 
 // =========================
@@ -42,85 +62,122 @@ window.addEventListener("scroll", () => {
 // =========================
 
 const animatedElements = document.querySelectorAll(
-    ".experience-card, .project-card, .education-card, .about-container, .skills-container"
+    ".experience-card, .project-card, .education-box, .about-grid, .skills-list"
 );
 
-const observer = new IntersectionObserver(
-    entries => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add("show");
-            }
-        });
-    },
-    {
-        threshold: 0.15
-    }
-);
+const reducedMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)"
+).matches;
 
-animatedElements.forEach(element => {
-    element.classList.add("hidden");
-    observer.observe(element);
-});
+if ("IntersectionObserver" in window && !reducedMotion) {
+
+    const observer = new IntersectionObserver(
+
+        entries => {
+
+            entries.forEach(entry => {
+
+                if (entry.isIntersecting) {
+
+                    entry.target.classList.add("show");
+
+                    observer.unobserve(entry.target);
+
+                }
+
+            });
+
+        },
+
+        {
+            threshold: 0.1
+        }
+
+    );
+
+    animatedElements.forEach(element => {
+
+        element.classList.add("reveal-on-scroll");
+
+        observer.observe(element);
+
+    });
+
+}
 
 
 // =========================
-// ACTIVE NAVIGATION LINK
+// ACTIVE NAVIGATION
 // =========================
 
-const sections = document.querySelectorAll("section");
+const sections = document.querySelectorAll("section[id]");
 const navLinks = document.querySelectorAll(".nav-links a");
 
-window.addEventListener("scroll", () => {
+function updateActiveNavigation() {
 
     let currentSection = "";
 
     sections.forEach(section => {
+
         const sectionTop = section.offsetTop;
-        const sectionHeight = section.clientHeight;
 
         if (window.scrollY >= sectionTop - 200) {
+
             currentSection = section.getAttribute("id");
+
         }
+
     });
 
     navLinks.forEach(link => {
-        link.classList.remove("active");
 
-        if (link.getAttribute("href") === "#" + currentSection) {
-            link.classList.add("active");
-        }
+        const href = link.getAttribute("href");
+
+        link.classList.toggle(
+            "active",
+            href === "#" + currentSection
+        );
+
     });
+
+}
+
+window.addEventListener("scroll", updateActiveNavigation, {
+    passive: true
 });
 
+updateActiveNavigation();
+
 
 // =========================
-// PROJECT CARD HOVER
+// PROFILE IMAGE CHECK
 // =========================
 
-const projectCards = document.querySelectorAll(".project-card");
+const profileImage = document.querySelector(".hero-image img");
 
-projectCards.forEach(card => {
+if (profileImage) {
 
-    card.addEventListener("mouseenter", () => {
-        card.style.transform = "translateY(-8px)";
+    profileImage.addEventListener("error", () => {
+
+        console.warn(
+            "Profile picture could not load. Verify profile.jpg exists in the same folder as index.html."
+        );
+
     });
 
-    card.addEventListener("mouseleave", () => {
-        card.style.transform = "translateY(0)";
-    });
-
-});
+}
 
 
 // =========================
-// CURRENT YEAR IN FOOTER
+// CURRENT YEAR
 // =========================
 
 const yearElement = document.getElementById("year");
 
 if (yearElement) {
+
     yearElement.textContent = new Date().getFullYear();
+
 }
 
 
@@ -129,33 +186,3 @@ if (yearElement) {
 // =========================
 
 console.log("Daniel Sherry Portfolio loaded successfully.");
-
-For the fade animations and active navigation to actually show visually, add this near the bottom of your style.css too:
-
-/* JavaScript scroll animations */
-
-.hidden {
-    opacity: 0;
-    transform: translateY(30px);
-    transition: opacity 0.7s ease, transform 0.7s ease;
-}
-
-.show {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-
-/* Header when scrolling */
-
-header.scrolled {
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
-
-
-/* Active navigation link */
-
-.nav-links a.active {
-    font-weight: 700;
-    border-bottom: 2px solid #222222;
-}
